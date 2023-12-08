@@ -1,5 +1,9 @@
 import cv2
 import cv2.aruco as aruco
+from numpyencoder import NumpyEncoder
+import pandas as pd
+import json
+
 import pyrealsense2 as rs
 import numpy as np
 import os
@@ -11,60 +15,143 @@ import csv
 import time
 import math
 from datetime import datetime
-
-# Video
+from urllib import request
+from flask_restx import Api, Resource
+from werkzeug.utils import secure_filename
+import index
 cap = cv2.VideoCapture(0)
+# Video
+# cap = cv2.VideoCapture(0)
+#
+# print('width :%d, height : %d' % (cap.get(3), cap.get(4)))
+#
+# while(True):
+#     ret, frame = cap.read()    # Read 결과와 frame
+#     VideoCap = True
+#     if(ret) :
+#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)    # 입력 받은 화면 Gray로 변환
+#
+#         cv2.imshow('frame_color', frame)    # 컬러 화면 출력
+#         if cv2.waitKey(1) == ord('q'):
+#             break
 
-print('width :%d, height : %d' % (cap.get(3), cap.get(4)))
 
-while(True):
-    ret, frame = cap.read()    # Read 결과와 frame
-    VideoCap = True
-    if(ret) :
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)    # 입력 받은 화면 Gray로 변환
 
-        cv2.imshow('frame_color', frame)    # 컬러 화면 출력
-        if cv2.waitKey(1) == ord('q'):
-            break
-
+#마커를 인식하고 마커 번호를 return 해 주는 함수가 필요함.
+#upload하는 클래스가 제대로 동작 했다면 파일이 들어올 것이고,
+#파일이 들어온 후에는 해당 함수를 실행하도록 한다.
 def find_aruco_id(img, marker_size=4, total_markers=50, draw=True):
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     key = getattr(aruco, f'DICT_{marker_size}X{marker_size}_{total_markers}')
     arucoDict = aruco.getPredefinedDictionary(key)
     arucoParam = aruco.DetectorParameters()
-    bbox, ids, _ = aruco.detectMarkers(gray, arucoDict, parameters=arucoParam)
+    Corners, ids, _ = aruco.detectMarkers(gray, arucoDict, parameters=arucoParam)
 
     if draw:
-        aruco.drawDetectedMarkers(img, bbox)
+        aruco.drawDetectedMarkers(img, Corners)
 
     return ids
 
+def markerDetection(file_name):
 
-while True:
-    if VideoCap:
-        VideoCap, frame = cap.read()
+    video_file = "./video/" + file_name + ".mp4"
+    cap = cv2.VideoCapture(video_file)
+
+    if cap.isOpened():
+        while True:
+            ret, frame = cap.read()
+            if ret:
+                # cv2.imshow(video_file, frame)
+                # frame = cv2.imread(video_file)
+
+                id = find_aruco_id(frame)
+                print(id[0][0])
+                return int(id[0][0])
+                # if(id):
+                #     return id
+
+                cv2.waitKey(25)
+                # return id
+            else:
+                break
     else:
-        frame = cv2.imread("sample.png")
+        print("can't open video.")
 
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    delay = round(100 / fps)
-    # print("FRAME FPS ; ", int(cap.get(cv2.CAP_PROP_FPS)))
+    # id = find_aruco_id(frame)
+    # print(id)  # 출력해 보면 아이디가 여러개 나온다. 이 중 취사 선택이 필요할 것.
 
-    id = find_aruco_id(frame)
-    print(id)       #출력해 보면 아이디가 여러개 나온다. 이 중 취사 선택이 필요할 것.
+    ##비디오 카메라로 마커 인식하려 할 때 쓰는 코드##
+    # if cv2.waitKey(delay) == 27:
+    #     break
+    # cv2.imshow("WINDOW", frame)
 
-    if cv2.waitKey(delay) == 27:
-        break
-    cv2.imshow("WINDOW", frame)
+    # 라우터의 위치가 여기가 맞는지 확인할것.
+    # 지속적으로 id를 보내려면 이 위치가 맞는 것 같긴 함. while문으로 계속 보내야 하니까.
+    # 라우터 안에 while문이 있어야 할 지, while문 안에 라우터가 있어야 할 지.
 
-cap.release()
-cv2.destroyAllWindows()
+    cap.release()
+    cv2.destroyAllWindows()
+    # return id
 
-
-
-
-
-
+    # return id
+    # global frame
+    # video_file = "./video/"+"2023-12-06_102112"+".mp4"
+    # cap =cv2.VideoCapture(video_file)
+    #
+    # if cap.isOpened():
+    #     while True:
+    #         ret, img = cap.read()
+    #         if ret:
+    #             frame = cv2.imread(video_file)
+    #             print("if ret:")
+    #             cv2.waitKey(25)
+    #         else:
+    #             break
+    # else:
+    #     print("can't open video.")
+    #
+    # # while True:
+    # #     #videcap이 아닌 video를 불러와서 작업하도록 해야함.
+    # #     if os.path.exists(file_name):
+    # #         frame = cv2.imread("./video/"+file_name+".mp4")
+    # #     else:
+    # #         frame = cv2.imread("sample.png")
+    #
+    #
+    #
+    #
+    #     ##비디오 카메라로 마커 인식하려 할 때 쓰는 코드##
+    #     # VideoCap = True
+    #     # if VideoCap:
+    #     #     VideoCap, frame = cap.read()
+    #     # else:
+    #     #     frame = cv2.imread("sample.png")
+    #     #
+    #     # fps = cap.get(cv2.CAP_PROP_FPS)
+    #     # delay = round(100 / fps)
+    #     # print("FRAME FPS ; ", int(cap.get(cv2.CAP_PROP_FPS)))
+    #
+    #
+    #
+    #
+    #     id = find_aruco_id(frame)
+    #     print(id)       #출력해 보면 아이디가 여러개 나온다. 이 중 취사 선택이 필요할 것.
+    #
+    #     return id
+    #     ##비디오 카메라로 마커 인식하려 할 때 쓰는 코드##
+    #     # if cv2.waitKey(delay) == 27:
+    #     #     break
+    #     # cv2.imshow("WINDOW", frame)
+    #
+    #
+    #     # 라우터의 위치가 여기가 맞는지 확인할것.
+    #     # 지속적으로 id를 보내려면 이 위치가 맞는 것 같긴 함. while문으로 계속 보내야 하니까.
+    #     # 라우터 안에 while문이 있어야 할 지, while문 안에 라우터가 있어야 할 지.
+    #
+    #
+    #
+    #     cap.release()
+    #     cv2.destroyAllWindows()
 
 
 
