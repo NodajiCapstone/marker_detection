@@ -1,12 +1,9 @@
 import cv2
 import cv2.aruco as aruco
-import pyrealsense2 as rs
+
 import numpy as np
 import os
 import pickle
-from RealSense_Utilities.realsense_api.realsense_api import RealSenseCamera
-from RealSense_Utilities.realsense_api.realsense_api import find_realsense
-from RealSense_Utilities.realsense_api.realsense_api import frame_to_np_array
 import csv
 import time
 import math
